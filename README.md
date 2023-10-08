@@ -24,4 +24,4 @@
 
 - Перед выполнение плейбука выполните следующие шаги, т.к. в нем используются дополнительные модули:
 - 1. поменять имя hosts:
-  2. установить модуи community.general.timezone и community.general.ufw
+  2. установить модули community.general.timezone и community.general.ufw

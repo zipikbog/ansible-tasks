@@ -1,0 +1,10 @@
+[Unit]
+Description=Script Daemon
+
+[Service]
+Type=simple
+ExecStart=/tmp/sleep.sh
+Restart=always
+
+[Install]
+WantedBy=default.target

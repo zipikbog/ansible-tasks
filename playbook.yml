@@ -1,0 +1,122 @@
+---
+- name: tesk1
+  hosts: yzel
+  become: true
+
+  tasks:
+
+   - name: Update apt-get repo and cache
+     apt:
+      update_cache: true
+      cache_valid_time: yes
+
+   - name: Set timezone to Asia/Baku
+     community.general.timezone:
+       name: Asia/Baku
+
+   - name: install
+     apt:
+      name: "{{ package }}"
+     vars:
+       package:
+       - mc
+       - wget
+       - tar
+       state: latest
+
+   - name: Install Nginx Web Server on Debian Family
+     apt:
+      name=nginx
+      state=latest
+
+   - name: Setup nginx
+     template:
+        src: "index.j2"
+        dest: "/var/www/html/index.html"
+     notify: nginx restart
+
+   - name: Allow 80 port
+     community.general.ufw:
+       rule: allow
+       port: '80'
+       proto: tcp
+
+
+   - name: Allow 443 port
+     community.general.ufw:
+       rule: allow
+       port: '443'
+       proto: tcp
+
+   - name: Allow 22 port
+     community.general.ufw:
+       rule: allow
+       port: '22'
+       proto: tcp
+
+   - name: deny everything and enable UFW
+     community.general.ufw:
+       state: enabled
+       policy: deny
+
+   - name: Add 2 users
+     user:
+        name: "{{ item }}"
+        groups: sudo
+        append: yes
+        shell: /bin/bash
+        password: "{{ '1234' | password_hash('sha512') }}"
+     loop:
+      - Devopsina
+      - Gerzzzorg
+
+   - name: mc debug
+     ansible.builtin.shell: mc --version
+     register: result
+   - debug:
+      var: result
+   - name: wget debug
+     ansible.builtin.shell: wget --version
+     register: result
+   - debug:
+      var: result
+   - name: tar debug
+     ansible.builtin.shell: tar --version
+     register: result
+   - debug:
+      var: result
+
+   - name: copy sleep.sh
+     ansible.builtin.copy:
+      src: sleep.sh
+      dest: /tmp/sleep.sh
+      owner: root
+      group: root
+      mode: '0777'
+
+   - name: copy sleep.service
+     ansible.builtin.copy:
+      src: sleep.service
+      dest: /etc/systemd/system/sleep.service
+      owner: root
+      group: root
+      mode: '0777'
+
+   - name: deamon-reload
+     ansible.builtin.shell: systemctl daemon-reload
+
+   - name: systemctl enable
+     ansible.builtin.shell: systemctl enable sleep.service 
+
+   - name: Check service status with systemctl
+     shell: systemctl is-active sleep.service || true
+     register: service_status_systemctl
+
+   - name: Display service status
+     debug:
+       msg: "sleep.service Service status: {{ service_status_systemctl.stdout }}"
+
+
+  handlers:
+   - name: nginx restart
+     service: name=nginx state=restarted
